@@ -1,0 +1,209 @@
+// comparable writable implementation
+
+
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.hadoop.io.WritableComparable;
+ 
+public class cw72 implements WritableComparable<cw72> {
+ 
+    private String gender;
+    private int sod;
+ 
+    public String getCompany() {
+        return gender;
+    }
+ 
+    public int getsod() {
+        return sod;
+    }
+ 
+    public void set(int sod, String gender) {
+        this.sod = sod;
+        this.gender = gender;
+    }
+ 
+    @Override
+    public void readFields(DataInput in) throws IOException {
+    	gender = in.readUTF();
+    	sod = in.readInt();
+    }
+ 
+    @Override
+    public void write(DataOutput out) throws IOException {
+    	out.writeUTF(gender);
+    	out.writeInt(sod);
+    }
+ 
+    @Override
+    public String toString() {
+        return gender + "\t" + sod;
+    }
+ /*
+    @Override
+    public int compareTo(cw72 session7Task7CW) {
+        int cmp = gender.compareTo(session7Task7CW.gender);
+ 
+        if (cmp != 0) {
+            return cmp;
+        }
+ 
+        return (sod - session7Task7CW.getsod());
+    }Integer.parseInt(lineArray[1])
+ */
+    @Override
+    public int hashCode(){
+        return gender.hashCode();
+    }
+ /*
+    @Override
+    public boolean equals(Object o)
+    {
+        if(o instanceof cw72)
+        {
+            cw72 session7Task7CW = (cw72) o;
+            return gender.equalsIgnoreCase(session7Task7CW.gender) && (sod == session7Task7CW.getsod());
+            
+        }
+        return false;
+    }
+  */
+    @Override
+    public int compareTo(cw72 o) {
+    	// TODO Auto-generated method stub
+    	return 0;
+    }
+    @Override
+    public boolean equals(Object obj) {
+    	// TODO Auto-generated method stub
+    	return super.equals(obj);
+    }
+}
+
+
+// driver class
+
+
+
+
+import org.apache.hadoop.fs.Path; 
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat; 
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat; 
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat; 
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.io.IntWritable;
+
+public class task72 {
+	@SuppressWarnings("deprecation")
+	public static void main(String[] args) throws Exception {
+		Configuration conf = new Configuration();
+		Job job = new Job(conf, "AssignmentTask7");
+		job.setJarByClass(task72.class);
+
+		job.setMapOutputKeyClass(cw72.class);
+		job.setMapOutputValueClass(IntWritable.class);
+
+		job.setOutputKeyClass(cw72.class);
+		job.setOutputValueClass(IntWritable.class);
+		
+		job.setMapperClass(map72.class);
+		job.setReducerClass(reduce72.class);
+		
+		job.setNumReduceTasks(2);
+		
+		job.setInputFormatClass(TextInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		Path outputPath = new Path(args[1]);
+		FileInputFormat.addInputPath(job, new Path(args[0])); 
+		FileOutputFormat.setOutputPath(job, outputPath);
+		outputPath.getFileSystem(conf).delete(outputPath, true);
+		
+		/*
+		Path out=new Path(args[1]);
+		out.getFileSystem(conf).delete(out);
+		*/
+		
+		job.waitForCompletion(true);
+	}
+}
+
+
+//mapper class
+
+
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.*; 
+
+public class map72 extends Mapper<LongWritable, Text, cw72, IntWritable> {
+	cw72 outKey = new cw72();
+	
+	IntWritable outValue = new IntWritable();
+	
+	public void map(LongWritable key, Text value, Context context) 
+			throws IOException, InterruptedException {
+		String[] lineArray = value.toString().split(",");
+		if(lineArray.length>1)
+		{
+		int n = Integer.parseInt(lineArray[1]) ;
+			if(n==1)
+			{
+				
+			
+		outKey.set(n , lineArray[4]);
+		outValue.set(1);
+		context.write(outKey, outValue);
+			}
+		}
+}
+
+}
+
+
+//reducer class
+
+
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class reduce72 extends Reducer<cw72, IntWritable, cw72, IntWritable>
+{
+	IntWritable outValue = new IntWritable();
+	
+	public void reduce(cw72 key, Iterable<IntWritable> values,Context context) throws IOException, InterruptedException
+	{
+		int sum = 0;
+		for (IntWritable value : values) {
+			sum += value.get();
+		}
+		
+		outValue.set(sum);
+		context.write(key, outValue);
+	}
+}
+
+
+//output
+
+chinmay@Chinmay-ThinkPad-E460:~/Desktop$ hadoop fs -text /user/chins/output/73op3/part-r-00000
+female	1	233
+chinmay@Chinmay-ThinkPad-E460:~/Desktop$ hadoop fs -text /user/chins/output/73op3/part-r-00001
+male	1	109
+
+
+
+
+
